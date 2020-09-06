@@ -11,11 +11,13 @@ def find_all_kode():
     '''
     url = 'https://www.kody.su/mobile/'
     req = requests.get(url)
-    with open('kods.html', 'w') as output_file:
+    # Создание файла .html
+    with open('kody.html', 'w') as output_file:
         output_file.write(req.text)
     kode_pool = []
-    with open('kods.html', 'r') as output_file:
+    with open('kody.html', 'r') as output_file:
         contents = output_file.read()
+        # Конвертация файла в lxml
         soup = BeautifulSoup(contents, 'lxml')
         strings = soup.find_all(string=re.compile('\d\d\d'))
         for txt in strings:
@@ -25,7 +27,7 @@ def find_all_kode():
                 pass
             else:
                 kode_pool.append(txt)
-    os.remove('kods.html')
+    os.remove('kody.html')
     return kode_pool
 
 def get_base_of_number(kod):
@@ -39,19 +41,26 @@ def get_base_of_number(kod):
     Return [code, [interval], mask, operator, region]
     '''
     url = f'https://www.kody.su/mobile/{kod}'
+    # Получение страницы
     req = requests.get(url)
+    # Создание файла .html
     with open(f'html\{kod}.html', 'w') as output_file:
         output_file.write(req.text)
     with open(f'html\{kod}.html', 'r') as output_file:
         contents = output_file.read()
+        # Конвертация файла в lxml
         soup = BeautifulSoup(contents, 'lxml')
+        # Поиск всех тэгов "tr"
         parse = soup.find_all('tr')
         base = []
         for item in parse[1:]:
             buf = []
+            # Поиск всех тэгов "td"
             information = item.find_all('td')
+            # На некоторых страницах есть пустые поля
             if information[0].text[4:] == '':
                 continue
+            # На некоторых страницах нетипичный формат записи
             point = re.search(r'\.\.\.', information[0].text[4:])
             if point:
                 buf.append(kod)
@@ -61,7 +70,8 @@ def get_base_of_number(kod):
                     buf.append(inf.text)
                 continue
             f = 0
-            mass = []    
+            mass = []
+            # Разбивка строки по 7 символов  
             for i in range(int(len(information[0].text[4:]) / 7)):
                 mass.append(information[0].text[4:][f:f+7])
                 f += 7
@@ -81,15 +91,13 @@ def get_base_of_number(kod):
     return base
 
 def to_xls(array, row):
+    '''
+    Write array to xls
+    '''
     # Создать рабочую книгу в Excel:
     filename = 'ABC_DEF_new_base.xlsx'
     wb = load_workbook(filename)
     sheet = wb.active
-    #sheet = wb.create_sheet('data')
-    #sheet.title = 'data'
-
-    # Добавить заголовки в рабочую книгу Excel:
-    #row = 1
     if row < 2:
         sheet['A'+str(row)] = 'ABC'
         sheet['B'+str(row)] = 'from'
@@ -99,7 +107,6 @@ def to_xls(array, row):
         sheet['F'+str(row)] = 'region'
 
     # Заполнить данными
-    
     for item in array:
         row += 1
         sheet['A'+str(row)] = item[0]
@@ -108,15 +115,12 @@ def to_xls(array, row):
         sheet['D'+str(row)] = item[2]
         sheet['E'+str(row)] = item[3]
         sheet['F'+str(row)] = item[4]
+    
     # Сохранить файл:
     wb.save(filename)
     return row
 
-#string = r'910-34xxxxx'
-#string = r'910-34xxxxx35xxxxx'
-#kode = '910'
-
-def cut_kods_pool(kods_pool): 
+def cut_kods_pool(kods_pool):
     new_kods_pool = []
     for element in range(1, len(kods_pool)):
         if int(kods_pool[element-1]) > int(kods_pool[element]):
@@ -124,10 +128,6 @@ def cut_kods_pool(kods_pool):
             break
         new_kods_pool.append(kods_pool[element-1])
     return new_kods_pool
-
-#print(replace('0000xxx0001xxx0002xxx0003xxx'))
-#print(kods_pool)
-#print(replace('''777000x777001x777002x777003x777004x777006x777007x777008x777009x77701xx77702xx77703xx77704xx77705xx77706xx77707xx77708xx77709xx7771xxx7772xxx7773xxx777400x777401x777402x777403x7774040777404177740427774043'''))
 
 def main():
     kods_pool = cut_kods_pool(find_all_kode())
