@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from openpyxl import Workbook, load_workbook
 import re
 import time
+import os
 
 def find_all_kode():
     '''
@@ -10,10 +11,10 @@ def find_all_kode():
     '''
     url = 'https://www.kody.su/mobile/'
     req = requests.get(url)
-    with open('test.html', 'w') as output_file:
+    with open('kods.html', 'w') as output_file:
         output_file.write(req.text)
     kode_pool = []
-    with open('test.html', 'r') as output_file:
+    with open('kods.html', 'r') as output_file:
         contents = output_file.read()
         soup = BeautifulSoup(contents, 'lxml')
         strings = soup.find_all(string=re.compile('\d\d\d'))
@@ -24,6 +25,7 @@ def find_all_kode():
                 pass
             else:
                 kode_pool.append(txt)
+    os.remove('kods.html')
     return kode_pool
 
 def get_base_of_number(kod):
@@ -38,9 +40,9 @@ def get_base_of_number(kod):
     '''
     url = f'https://www.kody.su/mobile/{kod}'
     req = requests.get(url)
-    with open(f'{kod}.html', 'w') as output_file:
+    with open(f'html\{kod}.html', 'w') as output_file:
         output_file.write(req.text)
-    with open(f'{kod}.html', 'r') as output_file:
+    with open(f'html\{kod}.html', 'r') as output_file:
         contents = output_file.read()
         soup = BeautifulSoup(contents, 'lxml')
         parse = soup.find_all('tr')
@@ -75,7 +77,8 @@ def get_base_of_number(kod):
                 for inf in information[1:]:
                     buf.append(inf.text)               
                 base.append(buf)
-        return base
+    os.remove(f'html\{kod}.html')
+    return base
 
 def to_xls(array, row):
     # Создать рабочую книгу в Excel:
@@ -112,33 +115,27 @@ def to_xls(array, row):
 #string = r'910-34xxxxx'
 #string = r'910-34xxxxx35xxxxx'
 #kode = '910'
-def replace(string):
-    '''
-    Replace string like '910-34xxxxx35xxxxx' to interval ['3400000', '3599999']
-    '''
-    buf = []
-    f = 0
-    point = re.search(r'\.\.\.', string)
-    if point:
-        return re.split(r'\.\.\.', string)
-    for i in range(int(len(string) / 7)):
-        buf.append(string[f:f+7])
-        f += 7
-    mass = re.sub(r'x+', r'', buf[0])
-    start = mass + ('0' * (7 - len(mass)))
-    mass = re.sub(r'x+', r'', buf[len(buf)-1])
-    finish = mass + ('9' * (7 - len(mass)))
-    if len(finish) < 7:
-        finish = '0' * (7 - len(finish)) + finish
-    return [start, finish]
+
+def cut_kods_pool(kods_pool): 
+    new_kods_pool = []
+    for element in range(1, len(kods_pool)):
+        if int(kods_pool[element-1]) > int(kods_pool[element]):
+            new_kods_pool.append(kods_pool[element-1])
+            break
+        new_kods_pool.append(kods_pool[element-1])
+    return new_kods_pool
 
 #print(replace('0000xxx0001xxx0002xxx0003xxx'))
-kods_pool = find_all_kode()
-print(kods_pool)
+#print(kods_pool)
 #print(replace('''777000x777001x777002x777003x777004x777006x777007x777008x777009x77701xx77702xx77703xx77704xx77705xx77706xx77707xx77708xx77709xx7771xxx7772xxx7773xxx777400x777401x777402x777403x7774040777404177740427774043'''))
-row = 1
-for i, kod in enumerate(kods_pool):
-    row = to_xls(get_base_of_number(kod), row)
-    print(f'{i+1} step. {kod} done')
-    time.sleep(2)
 
+def main():
+    kods_pool = cut_kods_pool(find_all_kode())
+    row = 1
+    for i, kod in enumerate(kods_pool[:5]):
+        row = to_xls(get_base_of_number(kod), row)
+        print(f'{i+1} step. {kod} done')
+        time.sleep(2)
+
+if __name__ == "__main__":
+    main()
