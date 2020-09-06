@@ -5,6 +5,9 @@ import re
 import time
 
 def find_all_kode():
+    '''
+    Get all mobile codes from https://www.kody.su/mobile/
+    '''
     url = 'https://www.kody.su/mobile/'
     req = requests.get(url)
     with open('test.html', 'w') as output_file:
@@ -24,6 +27,15 @@ def find_all_kode():
     return kode_pool
 
 def get_base_of_number(kod):
+    '''
+    Input data: mobile code like '977'
+    Сutput data: [
+                    [977, [1000000, 1999999], 1xxxxxx, MTC, Липецкая область], 
+                    [977, [2000000, 2999999], 2xxxxxx, Мегафон, Москва], 
+                    [977, [3000000, 3999999], 3xxxxxx, Билайн, Рязанская область]
+                 ]
+    Return [code, [interval], mask, operator, region]
+    '''
     url = f'https://www.kody.su/mobile/{kod}'
     req = requests.get(url)
     with open(f'{kod}.html', 'w') as output_file:
