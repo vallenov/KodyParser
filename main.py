@@ -44,9 +44,9 @@ def get_base_of_number(kod):
     # Получение страницы
     req = requests.get(url)
     # Создание файла .html
-    with open(f'html\{kod}.html', 'w') as output_file:
+    with open(f'{kod}.html', 'w') as output_file:
         output_file.write(req.text)
-    with open(f'html\{kod}.html', 'r') as output_file:
+    with open(f'{kod}.html', 'r') as output_file:
         contents = output_file.read()
         # Конвертация файла в lxml
         soup = BeautifulSoup(contents, 'lxml')
@@ -87,7 +87,7 @@ def get_base_of_number(kod):
                 for inf in information[1:]:
                     buf.append(inf.text)               
                 base.append(buf)
-    os.remove(f'html\{kod}.html')
+    os.remove(f'{kod}.html')
     return base
 
 def to_xls(array, row):
@@ -136,7 +136,7 @@ def cut_kods_pool(kods_pool):
 def main():
     kods_pool = cut_kods_pool(find_all_kode())
     row = 1
-    for i, kod in enumerate(kods_pool[:5]):
+    for i, kod in enumerate(kods_pool):
         row = to_xls(get_base_of_number(kod), row)
         print(f'{i+1} step. {kod} done')
         time.sleep(2)
