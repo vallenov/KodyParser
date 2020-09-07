@@ -96,7 +96,11 @@ def to_xls(array, row):
     '''
     # Создать рабочую книгу в Excel:
     filename = 'ABC_DEF_new_base.xlsx'
-    wb = load_workbook(filename)
+    # Проверка наличия файла и создание/присоединение, в зависимости от результата
+    if not os.path.exists(filename):
+        wb = Workbook()
+    else:
+        wb = load_workbook(filename)
     sheet = wb.active
     if row < 2:
         sheet['A'+str(row)] = 'ABC'
