@@ -10,18 +10,14 @@ class KodyParser():
 
     def __init__(self):
         self._url = f'https://www.kody.su/mobile/'
-        self._kody_pool = self.find_all_kode()
+        self._kody_pool = self._find_all_kode()
         self._output_file_name = 'ABC_DEF_new_base.xlsx'
 
-    def init_connection(self, kod=''):
-        # Получение страницы, и конвертация ее текста в lxml
-        return BeautifulSoup(requests.get(self._url+kod).text, 'lxml')
-
-    def find_all_kode(self):
+    def _find_all_kode(self):
         '''
         Get all mobile codes from https://www.kody.su/mobile/
         '''
-        soup = self.init_connection()
+        soup = BeautifulSoup(requests.get(self._url).text, 'lxml')
         kody_pool = []
         strings = soup.find_all(string=re.compile('\d\d\d'))
         for txt in strings:
@@ -35,22 +31,21 @@ class KodyParser():
                 kody_pool.append(txt)
         return kody_pool
 
-    def get_base_of_number(self, kod):
+    def _get_base_of_number(self, kod):
         '''
         Input data: mobile code like '977'
-        Сutput data: [
+        Output data: [
                         [977, [1000000, 1999999], 1xxxxxx, MTC, Липецкая область], 
                         [977, [2000000, 2999999], 2xxxxxx, Мегафон, Москва], 
                         [977, [3000000, 3999999], 3xxxxxx, Билайн, Рязанская область]
                     ]
         Return [code, [interval], mask, operator, region]
         '''
-        soup = self.init_connection(kod)
+        soup = BeautifulSoup(requests.get(self._url+kod).text, 'lxml')
         # Поиск всех тэгов "tr"
         parse = soup.find_all('tr')
         base = []
         for item in parse[1:]:
-            buf = []
             # Поиск всех тэгов "td"
             information = item.find_all('td')
             # На некоторых страницах есть пустые поля
@@ -59,6 +54,7 @@ class KodyParser():
             # На некоторых страницах нетипичный формат записи
             point = re.search(r'\.\.\.', information[0].text[4:])
             if point:
+                buf = []
                 buf.append(kod)
                 buf.append(re.split(r'\.\.\.', information[0].text[4:]))
                 buf.append(information[0].text[4:])
@@ -84,7 +80,7 @@ class KodyParser():
                 base.append(buf)
         return base
 
-    def to_xls(self, array, row):
+    def _to_xls(self, array, row):
         '''
         Write array to xls
         '''
@@ -118,8 +114,8 @@ class KodyParser():
 
     def main(self):
         row = 1
-        for i, kod in enumerate(self._kody_pool):
-            row = self.to_xls(self.get_base_of_number(kod), row)
+        for i, kod in enumerate(self._kody_pool[:3]):
+            row = self._to_xls(self._get_base_of_number(kod), row)
             print(f'{i+1} step. {kod} done')
             time.sleep(2)
 
