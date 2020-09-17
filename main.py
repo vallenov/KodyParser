@@ -17,6 +17,7 @@ class KodyParser():
         '''
         Get all mobile codes from https://www.kody.su/mobile/
         '''
+        logging.info(f'Find_all_kode start')
         soup = BeautifulSoup(requests.get(self._url).text, 'lxml')
         kody_pool = []
         strings = soup.find_all(string=re.compile('\d\d\d'))
@@ -29,6 +30,7 @@ class KodyParser():
                 if kody_pool and int(txt) < int(kody_pool[-1]):
                     return kody_pool
                 kody_pool.append(txt)
+        logging.info(f'Find_all_kode finish')
         return kody_pool
 
     def _get_base_of_number(self, kod):
@@ -41,6 +43,7 @@ class KodyParser():
                     ]
         Return [code, [interval], mask, operator, region]
         '''
+        logging.info(f'Kod {kod} will be processing')
         soup = BeautifulSoup(requests.get(self._url+kod).text, 'lxml')
         # Поиск всех тэгов "tr"
         parse = soup.find_all('tr')
@@ -78,6 +81,7 @@ class KodyParser():
                 for inf in information[1:]:
                     buf.append(inf.text)               
                 base.append(buf)
+        logging.info(f'Kod {kod} has been processed')
         return base
 
     def _to_xls(self, array, row):
@@ -85,9 +89,12 @@ class KodyParser():
         Write array to xls
         '''
         # Проверка наличия файла и создание/присоединение, в зависимости от результата
+        logging.info('Begin write to file')
         if not os.path.exists(self._output_file_name):
+            logging.info(f'File {self._output_file_name} does not exist. Create file')
             wb = Workbook()
         else:
+            logging.info(f'File {self._output_file_name} exist. Open file')
             wb = load_workbook(self._output_file_name)
         sheet = wb.active
         if row < 2:
@@ -99,6 +106,7 @@ class KodyParser():
             sheet['F'+str(row)] = 'region'
 
         # Заполнить данными
+        logging.info(f'Write into the file')
         for item in array:
             row += 1
             sheet['A'+str(row)] = item[0]
@@ -110,15 +118,19 @@ class KodyParser():
         
         # Сохранить файл:
         wb.save(self._output_file_name)
+        logging.info('End write to file')
         return row
 
     def main(self):
         row = 1
         for i, kod in enumerate(self._kody_pool[:3]):
+            logging.info(f'{i+1}/{len(self._kody_pool)} step')
             row = self._to_xls(self._get_base_of_number(kod), row)
-            print(f'{i+1} step. {kod} done')
             time.sleep(2)
+        logging.info('KodyParser finish!')
 
 if __name__ == "__main__":
+    logging.basicConfig(filename='run.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.info('KodyParser start!')
     KP = KodyParser()
     KP.main()
