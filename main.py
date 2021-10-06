@@ -123,7 +123,7 @@ class KodyParser():
 
     def main(self):
         row = 1
-        for i, kod in enumerate(self._kody_pool[:3]):
+        for i, kod in enumerate(self._kody_pool):
             logging.info(f'{i+1}/{len(self._kody_pool)} step')
             row = self._to_xls(self._get_base_of_number(kod), row)
             time.sleep(2)
